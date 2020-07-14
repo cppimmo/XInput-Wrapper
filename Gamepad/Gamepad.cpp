@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <climits>
 
+float normalize(float input, float min, float max);
+
 Gamepad::Gamepad(UINT id) : controllerID(id),
 	deadzoneX(XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE),
 	deadzoneY(XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE)
@@ -28,11 +30,11 @@ XINPUT_GAMEPAD* Gamepad::getGamepad()
 	return &state.Gamepad;
 }
 
-XINPUT_BATTERY_INFORMATION* Gamepad::getBatteryInfo()
+/*XINPUT_BATTERY_INFORMATION* Gamepad::getBatteryInfo()
 {
-	//XInputGetBatteryInformation(controllerID, XINPUT_DEVTYPE_GAMEPAD, &battery);
+	XInputGetBatteryInformation(controllerID, XINPUT_DEVTYPE_GAMEPAD, &battery);
 	return &battery;
-}
+}*/
 
 bool Gamepad::isConnected()
 {
@@ -64,13 +66,10 @@ bool Gamepad::Update()
 	float RX = normalize(static_cast<float>(state.Gamepad.sThumbRX), -32767, 32767);
 	float RY = normalize(static_cast<float>(state.Gamepad.sThumbRY), -32767, 32767);
 
-	leftStickX = ApplyDeadzone(LX, 1.f, normalize(deadzoneX, SHRT_MIN, SHRT_MAX));
-	leftStickY = ApplyDeadzone(LY, 1.f, normalize(deadzoneY, SHRT_MIN, SHRT_MAX));
-	rightStickX = ApplyDeadzone(RX, 1.f, normalize(deadzoneX, SHRT_MIN, SHRT_MAX));
-	rightStickY = ApplyDeadzone(RY, 1.f, normalize(deadzoneY, SHRT_MIN, SHRT_MAX));
-	//leftStickY = state.Gamepad.sThumbLY;
-	//rightStickX = state.Gamepad.sThumbRX;
-	//rightStickY = state.Gamepad.sThumbRY;
+	leftStickX = ApplyDeadzone(LX,  maxValue, normalize(deadzoneX, SHRT_MIN, SHRT_MAX));
+	leftStickY = ApplyDeadzone(LY, maxValue, normalize(deadzoneY, SHRT_MIN, SHRT_MAX));
+	rightStickX = ApplyDeadzone(RX, maxValue, normalize(deadzoneX, SHRT_MIN, SHRT_MAX));
+	rightStickY = ApplyDeadzone(RY, maxValue, normalize(deadzoneY, SHRT_MIN, SHRT_MAX));
 
 	leftTrigger = static_cast<float>(state.Gamepad.bLeftTrigger) / 255.0f;//normalize input 
 	rightTrigger = static_cast<float>(state.Gamepad.bRightTrigger) / 255.0f;
