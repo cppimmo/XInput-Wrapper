@@ -53,23 +53,16 @@ bool Gamepad::Update()
 	if (!isConnected())
 		return false;
 
-	//leftStickX = ApplyDeadzone(state.Gamepad.sThumbLX, maxValue, 0.024f);
-	//leftStickY = ApplyDeadzone(state.Gamepad.sThumbLY, maxValue, 0.024f);
+	float normLX = normalize(static_cast<float>(state.Gamepad.sThumbLX), -32767.0f, 32767.0f);
+	float normLY = normalize(static_cast<float>(state.Gamepad.sThumbLY), -32767, 32767);
 
-	//rightStickX = ApplyDeadzone(state.Gamepad.sThumbRX, maxValue, 0.024f);
-	//rightStickY = ApplyDeadzone(state.Gamepad.sThumbRY, maxValue, 0.024f);
-	
-	//float LX = state.Gamepad.sThumbLX;
-	float LX = normalize(static_cast<float>(state.Gamepad.sThumbLX), -32767.0f, 32767.0f);
-	float LY = normalize(static_cast<float>(state.Gamepad.sThumbLY), -32767, 32767);
+	float normRX = normalize(static_cast<float>(state.Gamepad.sThumbRX), -32767, 32767);
+	float normRY = normalize(static_cast<float>(state.Gamepad.sThumbRY), -32767, 32767);
 
-	float RX = normalize(static_cast<float>(state.Gamepad.sThumbRX), -32767, 32767);
-	float RY = normalize(static_cast<float>(state.Gamepad.sThumbRY), -32767, 32767);
-
-	leftStickX = ApplyDeadzone(LX,  maxValue, normalize(deadzoneX, SHRT_MIN, SHRT_MAX));
-	leftStickY = ApplyDeadzone(LY, maxValue, normalize(deadzoneY, SHRT_MIN, SHRT_MAX));
-	rightStickX = ApplyDeadzone(RX, maxValue, normalize(deadzoneX, SHRT_MIN, SHRT_MAX));
-	rightStickY = ApplyDeadzone(RY, maxValue, normalize(deadzoneY, SHRT_MIN, SHRT_MAX));
+	leftStickX = ApplyDeadzone(normLX,  maxValue, normalize(deadzoneX, SHRT_MIN, SHRT_MAX));
+	leftStickY = ApplyDeadzone(normLY, maxValue, normalize(deadzoneY, SHRT_MIN, SHRT_MAX));
+	rightStickX = ApplyDeadzone(normRX, maxValue, normalize(deadzoneX, SHRT_MIN, SHRT_MAX));
+	rightStickY = ApplyDeadzone(normRY, maxValue, normalize(deadzoneY, SHRT_MIN, SHRT_MAX));
 
 	leftTrigger = static_cast<float>(state.Gamepad.bLeftTrigger) / 255.0f;//normalize input 
 	rightTrigger = static_cast<float>(state.Gamepad.bRightTrigger) / 255.0f;
