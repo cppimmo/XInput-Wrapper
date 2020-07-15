@@ -53,7 +53,7 @@ bool Gamepad::Update()
 	if (!isConnected())
 		return false;
 
-	float normLX = normalize(static_cast<float>(state.Gamepad.sThumbLX), -32767.0f, 32767.0f);
+	float normLX = normalize(static_cast<float>(state.Gamepad.sThumbLX), -32767, 32767);
 	float normLY = normalize(static_cast<float>(state.Gamepad.sThumbLY), -32767, 32767);
 
 	float normRX = normalize(static_cast<float>(state.Gamepad.sThumbRX), -32767, 32767);
@@ -109,7 +109,6 @@ float Gamepad::ApplyDeadzone(float value, float maxValue, float deadzone)
 	{
 		return 0; //hey values are zero for once
 	}
-	//float normDeadzone = (deadzone - (-32767)) / (32767 - (-32767));
 	float normValue = (float)value / (float)(maxValue - deadzone);
 	return std::max(-1.0f, std::min(normValue, 1.0f));
 }
