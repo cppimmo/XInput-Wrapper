@@ -19,6 +19,7 @@ private:
 public:
 	Gamepad(UINT id);
 	Gamepad(UINT id, float deadzoneX, float deadzoneY);
+	~Gamepad() = default;
 
 	inline UINT getControllerID() const;
 	XINPUT_GAMEPAD* getGamepad();
