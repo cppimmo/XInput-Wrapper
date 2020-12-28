@@ -6,20 +6,9 @@
 
 class Gamepad
 {
-private:
-	UINT controllerID;
-	XINPUT_STATE state;
-	XINPUT_VIBRATION vibration;
-	XINPUT_BATTERY_INFORMATION battery;
-	
-	const float maxValue = 1.0f;
-
-	float deadzoneX;
-	float deadzoneY;
 public:
 	Gamepad(UINT id);
 	Gamepad(UINT id, float deadzoneX, float deadzoneY);
-	~Gamepad() = default;
 
 	inline UINT getControllerID() const;
 	XINPUT_GAMEPAD* getGamepad();
@@ -38,4 +27,14 @@ public:
 	bool isButtonPressed(UINT button) const;
 private:
 	float ApplyDeadzone(float value, float maxValue, float deadzone);
+private:
+	UINT controllerID;
+	XINPUT_STATE state;
+	XINPUT_VIBRATION vibration;
+	XINPUT_BATTERY_INFORMATION battery;
+	
+	static constexpr float maxValue = 1.0f;
+
+	float deadzoneX;
+	float deadzoneY;
 };
