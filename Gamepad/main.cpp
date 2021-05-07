@@ -2,34 +2,38 @@
 #include <chrono>
 #include <thread>
 #include <iomanip>
+#include <cstdlib>
 #include "Gamepad.h"
 
-int main()
+inline auto clear() -> void;
+
+auto main(int argc, char** argv) -> int
 {
-    Gamepad gamepad(0);
+    Gamepad gamepad(1u);
+    std::cout << sizeof(gamepad) << '\n';
     bool aPressed = false;
-    if (!gamepad.isConnected())
+    if (!gamepad.IsConnected())
     {
         std::cout << "Controller not connected" << std::endl;
+        std::cin.get();
         return -1;
     }
 
     while (true)
     {
-        
         if (gamepad.Update())
         {
-            system("cls");
-            std::cout << std::fixed << std::setprecision(2) << "Left Trigger: " << gamepad.leftTrigger <<
-                ", Right Trigger: " << gamepad.rightTrigger << "\n" <<
+            clear();
+            std::cout << std::fixed << std::setprecision(2) << "Left Trigger: " << gamepad.LeftTrigger() <<
+                ", Right Trigger: " << gamepad.RightTrigger() << '\n' <<
 
-            "Left Stick " << "X: " << gamepad.leftStickX
-            << ", Y: " << gamepad.leftStickY << "\n" <<
+            "Left Stick " << "X: " << gamepad.LeftStick().x
+            << ", Y: " << gamepad.LeftStick().y << '\n' <<
 
-            "Right Stick " << "X: " << gamepad.rightStickX
-            << ", Y: " << gamepad.rightStickY << std::endl;
+            "Right Stick " << "X: " << gamepad.RightStick().x
+            << ", Y: " << gamepad.RightStick().y << std::endl;
 
-            if (gamepad.isButtonPressed(XINPUT_GAMEPAD_A))
+            if (gamepad.IsButtonPressed(Gamepad::Button::A))
             {
                 aPressed = true;
             }
@@ -44,15 +48,23 @@ int main()
             }
             else
             {
-                gamepad.resetVibration();
+                gamepad.ResetVibration();
             }
 
-            if (gamepad.isButtonPressed(XINPUT_GAMEPAD_BACK))
+            if (gamepad.IsButtonPressed(Gamepad::Button::BACK))
                 break;
         }
-
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
-
+    std::cin.get();
     return 0;
+}
+
+inline auto clear() -> void
+{
+#ifdef _WIN32 || _WIN64
+    std::system("cls");
+#else
+    std::system("clear");
+#endif
 }
