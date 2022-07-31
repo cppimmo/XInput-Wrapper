@@ -115,7 +115,7 @@ private:
 	void OnButtonReleased( Button button ) noexcept;
 	static float ApplyDeadzone( float value, float maxValue, float deadzone );
 	template <typename buf>
-	static void TrimBuffer( std::queue<buf> &buffer ) noexcept;
+	static void TrimBuffer( std::queue<buf>& buffer ) noexcept;
 private:
 	static constexpr unsigned int bufferSize = 16u;
 	static constexpr float maxAxisValue = 1.0f;
