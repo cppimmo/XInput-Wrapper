@@ -5,7 +5,7 @@
 
 static float Normalize( float value, float min, float max );
 
-Gamepad::Gamepad( unsigned int id, const Deadzone &deadzone )
+Gamepad::Gamepad( unsigned int id, const Deadzone& deadzone )
 	: controllerID( id ), deadzone( deadzone )
 {
 	ZeroMemory( &state, sizeof(XINPUT_STATE) );
