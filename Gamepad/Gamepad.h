@@ -67,13 +67,18 @@ public:
 	using Deadzone = Axis;
 public:
 	// id is a number of 1-4 but is represented by 0-3 in the API
-	Gamepad(const unsigned int id, Deadzone deadzone = { XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE,
-		XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE } );
+	Gamepad( unsigned int id, const Deadzone& deadzone = {
+		XINPUT_GAMEPAD_LEFT_THUMB_DEADZONE,
+		XINPUT_GAMEPAD_RIGHT_THUMB_DEADZONE
+	} );
 	Gamepad( const Gamepad& ) = delete;
 	Gamepad& operator=( const Gamepad& ) = delete;
+	Gamepad( Gamepad&& ) noexcept = delete;
+	Gamepad& operator=( Gamepad&& ) noexcept = delete;
 
-	const UINT GetControllerID() const noexcept;
-	XINPUT_GAMEPAD* const GetGamepad();
+	UINT GetControllerID() const noexcept;
+	XINPUT_GAMEPAD* GetGamepad() noexcept;
+	const XINPUT_GAMEPAD* GetGamepad() const noexcept;
 	bool IsConnected();
 	bool Update();
 	void Vibrate( unsigned short leftSpeed, unsigned short rightSpeed );
@@ -81,15 +86,21 @@ public:
 	void ResetVibration();
 	bool IsButtonPressed( Button button ) const;
 	std::optional<ButtonEvent> ReadButtonBuffer() noexcept;
-	Axis &LeftStick() noexcept;
-	Axis &RightStick() noexcept;
+	Axis& LeftStick() noexcept;
+	const Axis& LeftStick() const noexcept;
+	Axis& RightStick() noexcept;
+	const Axis& RightStick() const noexcept;
 	float LeftTrigger() const noexcept;
 	float RightTrigger() const noexcept;
-	bool GetAudioDeviceIDs( const std::wstring& pRenderDeviceId, unsigned int* pRenderCount,
-		const std::wstring& pCaptureDeviceId, unsigned int* pCaptureCount ) const;
-	XINPUT_CAPABILITIES* const GetCapabilities( const unsigned long flags = 0u );
-	void SetDeadzone( const Deadzone deadzone ) noexcept;
+	bool GetAudioDeviceIDs(
+		const std::wstring& pRenderDeviceId, unsigned int* pRenderCount,
+		const std::wstring& pCaptureDeviceId, unsigned int* pCaptureCount
+	) const;
+	XINPUT_CAPABILITIES* GetCapabilities( unsigned long flags = 0u );
+	const XINPUT_CAPABILITIES* GetCapabilities(unsigned long flags = 0u) const;
+	void SetDeadzone( const Deadzone &deadzone ) noexcept;
 	Deadzone& GetDeadzone() noexcept;
+	const Deadzone& GetDeadzone() const noexcept;
 	bool ButtonIsEmpty() const noexcept;
 	void Flush() noexcept;
 	// XInputGetBatteryInformation is not supported for 9.1.0
@@ -102,8 +113,7 @@ private: // axis & trigger values
 private:
 	void OnButtonPressed( Button button ) noexcept;
 	void OnButtonReleased( Button button ) noexcept;
-	static float ApplyDeadzone( float value, const float maxValue, 
-		const float deadzone );
+	static float ApplyDeadzone( float value, float maxValue, float deadzone );
 	template <typename buf>
 	static void TrimBuffer( std::queue<buf> &buffer ) noexcept;
 private:
@@ -111,13 +121,13 @@ private:
 	static constexpr float maxAxisValue = 1.0f;
 	static constexpr float triggerThreshold = XINPUT_GAMEPAD_TRIGGER_THRESHOLD / 255.0f;
 
-	const unsigned int controllerID;
+	unsigned int controllerID;
 	Deadzone deadzone;
 
-	XINPUT_STATE state;
-	XINPUT_VIBRATION vibration;
-	XINPUT_BATTERY_INFORMATION battery;
-	XINPUT_CAPABILITIES capabilities;
+	mutable XINPUT_STATE state;
+	mutable XINPUT_VIBRATION vibration;
+	mutable XINPUT_BATTERY_INFORMATION battery;
+	mutable XINPUT_CAPABILITIES capabilities;
 
 	std::queue<ButtonEvent> buttonbuffer;
 };

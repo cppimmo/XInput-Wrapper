@@ -1,11 +1,11 @@
 #include "Gamepad.h"
-#include <math.h>
 #include <algorithm>
 #include <climits>
+#include <cmath>
 
-static float normalize( const float value, const float min, const float max );
+static float Normalize( float value, float min, float max );
 
-Gamepad::Gamepad( const unsigned int id, Deadzone deadzone )
+Gamepad::Gamepad( unsigned int id, const Deadzone &deadzone )
 	: controllerID( id ), deadzone( deadzone )
 {
 	ZeroMemory( &state, sizeof(XINPUT_STATE) );
@@ -14,12 +14,17 @@ Gamepad::Gamepad( const unsigned int id, Deadzone deadzone )
 	ZeroMemory( &capabilities, sizeof(XINPUT_CAPABILITIES) );
 }
 
-inline const UINT Gamepad::GetControllerID() const noexcept
+UINT Gamepad::GetControllerID() const noexcept
 {
 	return this->controllerID - 1;
 }
 
-XINPUT_GAMEPAD *const Gamepad::GetGamepad()
+XINPUT_GAMEPAD* Gamepad::GetGamepad() noexcept
+{
+	return &this->state.Gamepad;
+}
+
+const XINPUT_GAMEPAD *Gamepad::GetGamepad() const noexcept
 {
 	return &this->state.Gamepad;
 }
@@ -32,8 +37,8 @@ XINPUT_GAMEPAD *const Gamepad::GetGamepad()
 
 bool Gamepad::IsConnected()
 {
-	return ( XInputGetState( this->controllerID - 1, &state )
-		== ERROR_SUCCESS ) ? true : false;
+	return ( XInputGetState( this->controllerID - 1, &state ) == ERROR_SUCCESS )
+		? true : false;
 }
 
 bool Gamepad::Update()
@@ -51,21 +56,35 @@ bool Gamepad::Update()
 			OnButtonReleased( buttonbuffer.front().getButton() );
 	}
 
-	// normalize input from the left and right stick's x and y axes
-	const float normLX = normalize( static_cast<float>(state.Gamepad.sThumbLX), SHRT_MIN, SHRT_MAX );
-	const float normLY = normalize( static_cast<float>(state.Gamepad.sThumbLY), SHRT_MIN, SHRT_MAX );
+	static constexpr std::numeric_limits<short> limitShrt{};
+	static constexpr auto limitMin = limitShrt.min();
+	static constexpr auto limitMax = limitShrt.max();
+	// Normalize input from the left and right stick's x and y axes.
+	const float normLX = Normalize( static_cast<float>(state.Gamepad.sThumbLX),
+								   limitMin, limitMax);
+	const float normLY = Normalize( static_cast<float>(state.Gamepad.sThumbLY),
+								   limitMin, limitMax);
 
-	const float normRX = normalize( static_cast<float>(state.Gamepad.sThumbRX), SHRT_MIN, SHRT_MAX );
-	const float normRY = normalize( static_cast<float>(state.Gamepad.sThumbRY), SHRT_MIN, SHRT_MAX );
-
-	// apply the deadzones to the normalized form of each stick axes
-	leftStick.x = ApplyDeadzone(  normLX, maxAxisValue, normalize(deadzone.x, SHRT_MIN, SHRT_MAX) );
-	leftStick.y = ApplyDeadzone(  normLY, maxAxisValue, normalize(deadzone.x, SHRT_MIN, SHRT_MAX) );
-	rightStick.x = ApplyDeadzone( normRX, maxAxisValue, normalize(deadzone.x, SHRT_MIN, SHRT_MAX) );
-	rightStick.y = ApplyDeadzone( normRY, maxAxisValue, normalize(deadzone.x, SHRT_MIN, SHRT_MAX) );
-
-	leftTrigger = static_cast<float>(state.Gamepad.bLeftTrigger) / 255.0f;//normalize input 
-	rightTrigger = static_cast<float>(state.Gamepad.bRightTrigger) / 255.0f;
+	const float normRX = Normalize( static_cast<float>(state.Gamepad.sThumbRX),
+								   limitMin, limitMax);
+	const float normRY = Normalize( static_cast<float>(state.Gamepad.sThumbRY),
+								   limitMin, limitMax);
+	
+	// Apply the deadzones to the normalized form of each stick axes.
+	leftStick.x = ApplyDeadzone(  normLX, maxAxisValue, Normalize(deadzone.x, limitMin, limitMax) );
+	leftStick.y = ApplyDeadzone(  normLY, maxAxisValue, Normalize(deadzone.y, limitMin, limitMax) );
+	rightStick.x = ApplyDeadzone( normRX, maxAxisValue, Normalize(deadzone.x, limitMin, limitMax) );
+	rightStick.y = ApplyDeadzone( normRY, maxAxisValue, Normalize(deadzone.y, limitMin, limitMax) );
+	// Normalize trigger input of BYTE/char limit.
+	static constexpr std::numeric_limits<unsigned char> limitChr{};
+	leftTrigger = (
+		static_cast<float>(state.Gamepad.bLeftTrigger)
+		/ static_cast<float>(limitChr.max())
+	);
+	rightTrigger = (
+		static_cast<float>(state.Gamepad.bRightTrigger)
+		/ static_cast<float>(limitChr.max())
+	);
 	return true;
 }
 
@@ -107,19 +126,29 @@ std::optional<Gamepad::ButtonEvent> Gamepad::ReadButtonBuffer() noexcept
 {
 	if ( buttonbuffer.size() > 0u )
 	{
-		Gamepad::ButtonEvent e = buttonbuffer.front();
+		ButtonEvent e = buttonbuffer.front();
 		buttonbuffer.pop();
 		return e;
 	}
 	return {};
 }
 
-Gamepad::Axis &Gamepad::LeftStick() noexcept
+Gamepad::Axis& Gamepad::LeftStick() noexcept
 {
 	return leftStick;
 }
 
-Gamepad::Axis &Gamepad::RightStick() noexcept
+const Gamepad::Axis& Gamepad::LeftStick() const noexcept
+{
+	return leftStick;
+}
+
+Gamepad::Axis& Gamepad::RightStick() noexcept
+{
+	return rightStick;
+}
+
+const Gamepad::Axis& Gamepad::RightStick() const noexcept
 {
 	return rightStick;
 }
@@ -145,33 +174,47 @@ bool Gamepad::GetAudioDeviceIDs( const std::wstring& pRenderDeviceId, unsigned i
 	return true;
 }
 
-XINPUT_CAPABILITIES *const Gamepad::GetCapabilities( const unsigned long flags )
+XINPUT_CAPABILITIES* Gamepad::GetCapabilities( unsigned long flags )
 { // returns const pointer to XINPUT_CAPABILITIES structure that details  
   // useful charateristics about the controller with the dwUserIndex parameter
   // you may pass XINPUT_FLAG_GAMEPAD as the value of flags to limit use to Xbox 360 controllers
 	const auto result = XInputGetCapabilities(GetControllerID(), flags,
-		&this->capabilities);
+											  &this->capabilities);
 	return &this->capabilities;
 }
 
-void Gamepad::SetDeadzone( const Deadzone deadzone ) noexcept
+const XINPUT_CAPABILITIES* Gamepad::GetCapabilities( unsigned long flags ) const
+{
+	const auto result = XInputGetCapabilities(GetControllerID(), flags,
+											  &this->capabilities);
+	return &this->capabilities;
+}
+
+void Gamepad::SetDeadzone( const Deadzone& deadzone ) noexcept
 {
 	this->deadzone = deadzone;
 }
 
 void Gamepad::OnButtonPressed( Button button ) noexcept
 {
-	buttonbuffer.push( Gamepad::ButtonEvent( Gamepad::ButtonEvent::Type::PRESS,button ) );
+	using ButtonEventType = ButtonEvent::Type;
+	buttonbuffer.push( ButtonEvent( ButtonEventType::PRESS,button ) );
 	TrimBuffer( buttonbuffer );
 }
 
 void Gamepad::OnButtonReleased( Button button ) noexcept
 {
-	buttonbuffer.push( Gamepad::ButtonEvent( Gamepad::ButtonEvent::Type::RELEASE,button ) );
+	using ButtonEventType = ButtonEvent::Type;
+	buttonbuffer.push( ButtonEvent( ButtonEventType::RELEASE,button ) );
 	TrimBuffer( buttonbuffer );
 }
 
 Gamepad::Deadzone& Gamepad::GetDeadzone() noexcept
+{
+	return deadzone;
+}
+
+const Gamepad::Deadzone& Gamepad::GetDeadzone() const noexcept
 {
 	return deadzone;
 }
@@ -186,7 +229,7 @@ inline void Gamepad::Flush() noexcept
 	buttonbuffer = std::queue<Gamepad::ButtonEvent>();
 }
 
-float Gamepad::ApplyDeadzone( float value, const float maxValue, const float deadzone)
+float Gamepad::ApplyDeadzone( float value, const float maxValue, float deadzone)
 {
 	if (value < -(deadzone))
 	{
@@ -213,8 +256,8 @@ inline void Gamepad::TrimBuffer(std::queue<buf> &buffer) noexcept
 	}
 }
 
-static float normalize(const float value, const float min, const float max)
-{
+static float Normalize(float value, float min, float max)
+{ // Normalize value between min/max range.
 	const float average = (min + max) / 2.0f;
 	const float range = (max - min) / 2.0f;
 	return (value - average) / range;
